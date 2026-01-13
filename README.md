@@ -14,6 +14,9 @@ The API will be available at `http://localhost:8000`
 
 - **GET /health** - Health check endpoint
 - **POST /links** - Create a new short link (returns 201)
+- **GET /links** - List all links with optional search query
+- **GET /links/{slug}/stats** - Get click statistics for a link
+- **GET /{slug}** - Redirect to target URL with click tracking (returns 302)
 - **GET /docs** - OpenAPI documentation (Swagger UI)
 - **GET /redoc** - ReDoc documentation
 
@@ -55,6 +58,115 @@ Create a new short link with auto-generated slug.
 - Slug is auto-generated (base62, 6+ characters)
 - Links are immutable (no update endpoint)
 - Collision-safe slug generation
+
+### GET /{slug}
+
+Redirect to the target URL and log click analytics.
+
+**Behavior:**
+- Returns **302 Found** redirect to target URL
+- Returns **404 Not Found** if slug doesn't exist or link is disabled
+- Logs click event with privacy-safe tracking
+
+**Click Tracking:**
+- `clicked_at` - UTC timestamp
+- `link_id` - Reference to the link
+- `referrer` - HTTP Referer header (if present)
+- `user_agent` - User agent string
+- `ip_hash` - SHA256(IP + user_agent + link_id + date) - privacy-safe
+- `ip_truncated_or_null` - Truncated IP (e.g., 192.168.1.xxx) or null
+- `day` - Date for aggregation queries
+
+**Privacy:**
+- Raw IP addresses are **never stored**
+- IP hash includes daily salt for privacy
+- Only truncated IP is optionally stored
+
+**Example:**
+```bash
+curl -L http://localhost:8000/Ab3k9Z
+# Returns 302 redirect to target URL
+# Logs click event in database
+```
+
+### GET /links
+
+List all links with optional search filtering.
+
+**Query Parameters:**
+- `query` (optional) - Search term to filter links by slug, target_url, campaign, label, or source
+
+**Response:**
+```json
+{
+  "links": [
+    {
+      "id": 123,
+      "slug": "Ab3k9Z",
+      "target_url": "https://example.com",
+      "created_at": "2026-01-14T12:00:00Z",
+      "created_by": "user@example.com",
+      "campaign": "summer-sale",
+      "label": "homepage",
+      "source": "email",
+      "is_disabled": false
+    }
+  ],
+  "total": 1
+}
+```
+
+**Example:**
+```bash
+# List all links
+curl http://localhost:8000/links
+
+# Search links
+curl "http://localhost:8000/links?query=summer"
+```
+
+### GET /links/{slug}/stats
+
+Get click statistics and analytics for a specific link.
+
+**Response:**
+```json
+{
+  "link": {
+    "id": 123,
+    "slug": "Ab3k9Z",
+    "target_url": "https://example.com",
+    "created_at": "2026-01-14T12:00:00Z",
+    "is_disabled": false
+  },
+  "total_clicks": 1234,
+  "unique_clicks_approx": 456,
+  "daily": [
+    {
+      "date": "2026-01-14",
+      "clicks": 100,
+      "unique": 75
+    },
+    {
+      "date": "2026-01-13",
+      "clicks": 150,
+      "unique": 120
+    }
+  ]
+}
+```
+
+**Metrics:**
+- `total_clicks` - Total number of clicks (all time)
+- `unique_clicks_approx` - Approximate unique visitors (based on distinct ip_hash)
+- `daily` - Daily breakdown with click count and unique visitors per day
+  - Sorted by date descending (most recent first)
+  - `unique` per day based on distinct ip_hash for that day
+
+**Example:**
+```bash
+curl http://localhost:8000/links/Ab3k9Z/stats
+```
 
 ## Environment Variables
 

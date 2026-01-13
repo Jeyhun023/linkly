@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, field_validator
 from datetime import datetime, date
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class LinkCreateRequest(BaseModel):
@@ -74,3 +74,32 @@ class LinkClickResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     database: str
+
+
+class LinkBasic(BaseModel):
+    id: int
+    slug: str
+    target_url: str
+    created_at: datetime
+    is_disabled: bool
+
+    class Config:
+        from_attributes = True
+
+
+class DailyStats(BaseModel):
+    date: date
+    clicks: int
+    unique: int
+
+
+class LinkStatsResponse(BaseModel):
+    link: LinkBasic
+    total_clicks: int
+    unique_clicks_approx: int
+    daily: List[DailyStats]
+
+
+class LinkListResponse(BaseModel):
+    links: List[LinkResponse]
+    total: int
