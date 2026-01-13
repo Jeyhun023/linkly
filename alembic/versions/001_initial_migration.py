@@ -19,20 +19,50 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Create links table
     op.create_table(
         'links',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('original_url', sa.String(), nullable=False),
-        sa.Column('short_code', sa.String(), nullable=False),
+        sa.Column('id', sa.BigInteger(), nullable=False),
+        sa.Column('slug', sa.String(), nullable=False),
+        sa.Column('target_url', sa.String(), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('clicks', sa.Integer(), nullable=True),
+        sa.Column('created_by', sa.String(), nullable=True),
+        sa.Column('campaign', sa.String(), nullable=True),
+        sa.Column('label', sa.String(), nullable=True),
+        sa.Column('source', sa.String(), nullable=True),
+        sa.Column('is_disabled', sa.Boolean(), nullable=False, server_default=sa.text('false')),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_links_id'), 'links', ['id'], unique=False)
-    op.create_index(op.f('ix_links_short_code'), 'links', ['short_code'], unique=True)
+    op.create_index(op.f('ix_links_slug'), 'links', ['slug'], unique=False)
+    op.create_index('idx_links_slug', 'links', ['slug'], unique=True)
+
+    # Create link_clicks table
+    op.create_table(
+        'link_clicks',
+        sa.Column('id', sa.BigInteger(), nullable=False),
+        sa.Column('link_id', sa.BigInteger(), nullable=False),
+        sa.Column('clicked_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+        sa.Column('referrer', sa.String(), nullable=True),
+        sa.Column('user_agent', sa.String(), nullable=True),
+        sa.Column('ip_hash', sa.String(), nullable=False),
+        sa.Column('ip_truncated_or_null', sa.String(), nullable=True),
+        sa.Column('day', sa.Date(), nullable=False),
+        sa.ForeignKeyConstraint(['link_id'], ['links.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_link_clicks_id'), 'link_clicks', ['id'], unique=False)
+    op.create_index('idx_link_clicks_link_id_clicked_at', 'link_clicks', ['link_id', 'clicked_at'], unique=False)
+    op.create_index('idx_link_clicks_link_id_ip_hash', 'link_clicks', ['link_id', 'ip_hash'], unique=False)
 
 
 def downgrade() -> None:
-    op.drop_index(op.f('ix_links_short_code'), table_name='links')
+    op.drop_index('idx_link_clicks_link_id_ip_hash', table_name='link_clicks')
+    op.drop_index('idx_link_clicks_link_id_clicked_at', table_name='link_clicks')
+    op.drop_index(op.f('ix_link_clicks_id'), table_name='link_clicks')
+    op.drop_table('link_clicks')
+
+    op.drop_index('idx_links_slug', table_name='links')
+    op.drop_index(op.f('ix_links_slug'), table_name='links')
     op.drop_index(op.f('ix_links_id'), table_name='links')
     op.drop_table('links')
