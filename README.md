@@ -1,6 +1,4 @@
-# Linkly - URL Shortener Service
-
-FastAPI + PostgreSQL service with Alembic migrations.
+# Simple Link Shortener App
 
 ## Quick Start
 

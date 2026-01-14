@@ -2,7 +2,6 @@ from pydantic import BaseModel, HttpUrl, field_validator
 from datetime import datetime, date
 from typing import Optional, Dict, Any, List
 
-
 class LinkCreateRequest(BaseModel):
     target_url: HttpUrl
     campaign: Optional[str] = None
@@ -20,7 +19,6 @@ class LinkCreateRequest(BaseModel):
             raise ValueError('target_url must be http or https')
         return v
 
-
 class LinkCreateResponse(BaseModel):
     id: int
     slug: str
@@ -31,7 +29,6 @@ class LinkCreateResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class LinkResponse(BaseModel):
     id: int
@@ -47,7 +44,6 @@ class LinkResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class LinkClickCreate(BaseModel):
     link_id: int
     referrer: Optional[str] = None
@@ -55,7 +51,6 @@ class LinkClickCreate(BaseModel):
     ip_hash: str
     ip_truncated_or_null: Optional[str] = None
     day: date
-
 
 class LinkClickResponse(BaseModel):
     id: int
@@ -70,11 +65,9 @@ class LinkClickResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class HealthResponse(BaseModel):
     status: str
     database: str
-
 
 class LinkBasic(BaseModel):
     id: int
@@ -86,19 +79,16 @@ class LinkBasic(BaseModel):
     class Config:
         from_attributes = True
 
-
 class DailyStats(BaseModel):
     date: date
     clicks: int
     unique: int
-
 
 class LinkStatsResponse(BaseModel):
     link: LinkBasic
     total_clicks: int
     unique_clicks_approx: int
     daily: List[DailyStats]
-
 
 class LinkListResponse(BaseModel):
     links: List[LinkResponse]

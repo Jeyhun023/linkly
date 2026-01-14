@@ -20,7 +20,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
 @app.get("/health", response_model=HealthResponse)
 def health_check(db: Session = Depends(get_db)):
     try:
@@ -59,7 +58,7 @@ def create_link(request: LinkCreateRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_link)
 
-    short_url = f"https://{settings.BASE_DOMAIN}/{new_link.slug}"
+    short_url = f"http://{settings.BASE_DOMAIN}/{new_link.slug}"
 
     metadata = {}
     if request.campaign:
