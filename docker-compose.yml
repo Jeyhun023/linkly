@@ -1,0 +1,40 @@
+services:
+  postgresql:
+    container_name: linkly-database
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: linkly
+    networks:
+      - linkly-net
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    container_name: linkly-api
+    build: .
+    ports:
+      - "8000:8000"
+    networks:
+      - linkly-net
+    volumes:
+      - .:/code
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  linkly-net:
+    name: linkly-net
+    driver: bridge
